@@ -2,10 +2,10 @@ import zenea
 import CryptoKit
 import Foundation
 
-public struct ValyaBlockWrapper<Source: BlockStorage>: BlockStorage {
-    public var source: Source
+public struct ValyaBlockWrapper: BlockStorage {
+    public var source: BlockStorage
     
-    public init(source: Source) {
+    public init(source: BlockStorage) {
         self.source = source
     }
     
