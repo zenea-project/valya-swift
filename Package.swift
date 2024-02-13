@@ -5,19 +5,21 @@ import PackageDescription
 
 let package = Package(
     name: "valya-swift",
+    platforms: [
+        .macOS("13.3")
+    ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
-        .library(
-            name: "valya-swift",
-            targets: ["valya-swift"]),
+        .library(name: "valya-swift", targets: ["valya"])
+    ],
+    dependencies: [
+        .package(url: "https://github.com/glasfisch3000/zenea-swift.git", from: "1.0.0-alpha7")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "valya-swift"),
-        .testTarget(
-            name: "valya-swiftTests",
-            dependencies: ["valya-swift"]),
+            name: "valya",
+            dependencies: [
+                .product(name: "zenea-swift", package: "zenea-swift")
+            ]
+        )
     ]
 )
