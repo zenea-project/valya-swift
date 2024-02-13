@@ -39,8 +39,6 @@ public struct ValyaBlockWrapper: BlockStorage {
             }
         }
         
-        print("valya split up -> \(blocks)")
-        
         guard let (additional, main) = blocks.compress() else { return .failure(.unable) }
         
         for block in additional {
