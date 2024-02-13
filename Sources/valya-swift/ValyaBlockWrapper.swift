@@ -26,8 +26,8 @@ public struct ValyaBlockWrapper: BlockStorage {
     public func putBlock(content: Data) async -> Result<Block.ID, BlockPutError> {
         var blocks: [Block.ID] = []
         
-        for start in stride(from: 0, to: content.count, by: 2<<16) {
-            let end = min(content.count, start + 2<<16)
+        for start in stride(from: 0, to: content.count, by: 1<<16) {
+            let end = min(content.count, start + 1<<16)
             let subdata = content[start..<end]
             let block = Block(content: subdata)
             
@@ -107,12 +107,12 @@ extension Block {
     public init?<Array>(encoding blocks: Array) where Array: Sequence, Array.Element == Block.ID {
         guard let prefixData = "valya-1".data(using: .utf8) else { return nil }
         
-        var blocksData = Data(capacity: 2<<16)
+        var blocksData = Data(capacity: 1<<16)
         for block in blocks {
             guard let encoded = block.encode() else { return nil }
             blocksData += encoded
             
-            guard blocksData.count < 2<<16 else { return nil }
+            guard blocksData.count < 1<<16 else { return nil }
         }
         guard blocksData.count > 0 else { return nil }
         
@@ -121,7 +121,7 @@ extension Block {
         let hashData = hasher.finalize()
         
         let result = prefixData + [0] + hashData + blocksData
-        guard result.count <= 2<<16 else { return nil }
+        guard result.count <= 1<<16 else { return nil }
         
         self.init(content: result)
     }
