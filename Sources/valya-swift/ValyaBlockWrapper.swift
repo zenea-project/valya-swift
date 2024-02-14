@@ -120,38 +120,50 @@ extension Block {
     }
     
     public func decode() -> ValyaDecodeResult {
-        guard self.content.count > 0 else { print("empty"); return .empty }
+        print("check if empty")
+        guard self.content.count > 0 else { return .empty }
         
+        print("decoding prefix")
         let prefix = self.content.prefix(while: { $0 != 0 })
         guard let prefixString = String(data: prefix, encoding: .utf8) else { return .regularBlock }
         guard prefixString == "valya-1" else { return .regularBlock }
         
+        print("reading hash")
         guard self.content.count > prefix.count+1+SHA256.byteCount else { return .regularBlock }
         let hashData = self.content[prefix.count+1..<prefix.count+1+SHA256.byteCount]
         
+        print("reading blocks")
         var blocksData = self.content[prefix.count+1+hashData.count..<self.content.count]
         
+        print("checking hash")
         var hasher = SHA256()
         hasher.update(data: blocksData)
         guard hasher.finalize().elementsEqual(hashData) else { return .regularBlock }
         
+        print("decoding blocks")
         var blocks: [Block.ID] = []
         while blocksData.count > 0 {
+            print("  reading algorithm")
             let algorithmData = blocksData.prefix { $0 != 0 }
             blocksData.removeFirst(algorithmData.count)
             
+            print("  removing separator")
             guard blocksData.count > 0 else { return .corrupted }
             blocksData.removeFirst() // separator
             
+            print("  decoding algorithm")
             guard let algorithmString = String(data: algorithmData, encoding: .utf8) else { return .corrupted }
             guard let algorithm = Block.ID.Algorithm(parsing: algorithmString) else { return .corrupted }
             
+            print("  decoding id")
             guard blocksData.count >= algorithm.bytes else { return .corrupted }
             let idData = blocksData[0..<algorithm.bytes]
             let id = [UInt8](idData)
             
+            print("  appending block")
             blocks.append(Block.ID(algorithm: algorithm, hash: id))
             
+            print("  trimming data")
             blocksData.removeFirst(algorithm.bytes)
         }
         
