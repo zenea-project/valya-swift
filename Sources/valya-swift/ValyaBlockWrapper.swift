@@ -120,19 +120,19 @@ extension Block {
     }
     
     public func decode() -> ValyaDecodeResult {
-        guard self.content.count > 0 else { return .empty }
+        guard self.content.count > 0 else { print("empty"); return .empty }
         
         guard let prefixData = "valya-1".data(using: .utf8) else { return .error }
-        guard self.content.starts(with: prefixData) else { return .regularBlock }
+        guard self.content.starts(with: prefixData) else { print("block doesnt start with valya-1"); return .regularBlock }
         
-        guard self.content.count > prefixData.count+32 else { return .regularBlock }
+        guard self.content.count > prefixData.count+32 else { print("hash missing"); return .regularBlock }
         let hashData = self.content[prefixData.count..<prefixData.count+32]
         
         var blocksData = self.content[prefixData.count+hashData.count..<self.content.count]
         
         var hasher = SHA256()
         hasher.update(data: blocksData)
-        guard hasher.finalize() == hashData else { return .regularBlock }
+        guard hasher.finalize() == hashData else { print("hash mismatch"); return .regularBlock }
         
         var blocks: [Block.ID] = []
         while blocksData.count > 0 {
