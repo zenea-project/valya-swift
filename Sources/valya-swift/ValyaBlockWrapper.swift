@@ -77,13 +77,6 @@ extension Array where Element == Block.ID {
     }
 }
 
-extension Data {
-    public func padded(repeating: Element, to length: Int) -> Data {
-        if self.count >= length { return self }
-        return self + Data(repeating: repeating, count: length-self.count)
-    }
-}
-
 extension Block.ID.Algorithm {
     public var bytes: Int {
         switch self {
@@ -125,4 +118,54 @@ extension Block {
         
         self.init(content: result)
     }
+    
+    public func decode() -> ValyaDecodeResult {
+        guard self.content.count > 0 else { return .empty }
+        
+        guard let prefixData = "valya-1".data(using: .utf8) else { return .error }
+        guard self.content.starts(with: prefixData) else { return .regularBlock }
+        
+        guard self.content.count > prefixData.count+32 else { return .regularBlock }
+        let hashData = self.content[prefixData.count..<prefixData.count+32]
+        
+        var blocksData = self.content[prefixData.count+hashData.count..<self.content.count]
+        
+        var hasher = SHA256()
+        hasher.update(data: blocksData)
+        guard hasher.finalize() == hashData else { return .regularBlock }
+        
+        var blocks: [Block.ID] = []
+        while blocksData.count > 0 {
+            let prefix = blocksData.prefix { $0 != 0 }
+            blocksData.removeFirst(prefix.count)
+            
+            guard let prefixString = String(data: prefix, encoding: .utf8) else { return .corrupted }
+            guard let algorithm = Block.ID.Algorithm(parsing: prefixString) else { return .corrupted }
+            
+            guard blocksData.count >= algorithm.bytes else { return .corrupted }
+            let idData = blocksData[0..<algorithm.bytes]
+            let id = [UInt8](idData)
+            
+            blocks.append(Block.ID(algorithm: algorithm, hash: id))
+        }
+        
+        return .valyaBlock(ValyaBlock(version: .v1, content: blocks))
+    }
+}
+
+public enum ValyaDecodeResult {
+    case error
+    case empty
+    case corrupted
+    case regularBlock
+    case valyaBlock(_ block: ValyaBlock)
+}
+
+public struct ValyaBlock {
+    public enum Version {
+        case v1
+    }
+    
+    public var version: Version
+    public var content: [Block.ID]
 }
