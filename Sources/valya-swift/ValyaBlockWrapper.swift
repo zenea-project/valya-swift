@@ -122,25 +122,29 @@ extension Block {
     public func decode() -> ValyaDecodeResult {
         guard self.content.count > 0 else { print("empty"); return .empty }
         
-        guard let prefixData = "valya-1".data(using: .utf8) else { return .error }
-        guard self.content.starts(with: prefixData) else { print("block doesnt start with valya-1"); return .regularBlock }
+        let prefix = self.content.prefix(while: { $0 != 0 })
+        guard let prefixString = String(data: prefix, encoding: .utf8) else { return .regularBlock }
+        guard prefixString == "valya-1" else { return .regularBlock }
         
-        guard self.content.count > prefixData.count+32 else { print("hash missing"); return .regularBlock }
-        let hashData = self.content[prefixData.count..<prefixData.count+32]
+        guard self.content.count > prefix.count+1+SHA256.byteCount else { return .regularBlock }
+        let hashData = self.content[prefix.count+1..<prefix.count+1+SHA256.byteCount]
         
-        var blocksData = self.content[prefixData.count+hashData.count..<self.content.count]
+        var blocksData = self.content[prefix.count+1+hashData.count..<self.content.count]
         
         var hasher = SHA256()
         hasher.update(data: blocksData)
-        guard hasher.finalize().elementsEqual(hashData) else { print("hash mismatch"); return .regularBlock }
+        guard hasher.finalize().elementsEqual(hashData) else { return .regularBlock }
         
         var blocks: [Block.ID] = []
         while blocksData.count > 0 {
-            let prefix = blocksData.prefix { $0 != 0 }
-            blocksData.removeFirst(prefix.count)
+            let algorithmData = blocksData.prefix { $0 != 0 }
+            blocksData.removeFirst(algorithmData.count)
             
-            guard let prefixString = String(data: prefix, encoding: .utf8) else { return .corrupted }
-            guard let algorithm = Block.ID.Algorithm(parsing: prefixString) else { return .corrupted }
+            guard blocksData.count > 0 else { return .corrupted }
+            blocksData.removeFirst() // separator
+            
+            guard let algorithmString = String(data: algorithmData, encoding: .utf8) else { return .corrupted }
+            guard let algorithm = Block.ID.Algorithm(parsing: algorithmString) else { return .corrupted }
             
             guard blocksData.count >= algorithm.bytes else { return .corrupted }
             let idData = blocksData[0..<algorithm.bytes]
