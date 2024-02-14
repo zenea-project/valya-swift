@@ -151,6 +151,8 @@ extension Block {
             let id = [UInt8](idData)
             
             blocks.append(Block.ID(algorithm: algorithm, hash: id))
+            
+            blocksData.removeFirst(algorithm.bytes)
         }
         
         return .valyaBlock(ValyaBlock(version: .v1, content: blocks))
