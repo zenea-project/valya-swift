@@ -132,7 +132,7 @@ extension Block {
         
         var hasher = SHA256()
         hasher.update(data: blocksData)
-        guard hasher.finalize() == hashData else { print("hash mismatch"); return .regularBlock }
+        guard hasher.finalize().elementsEqual(hashData) else { print("hash mismatch"); return .regularBlock }
         
         var blocks: [Block.ID] = []
         while blocksData.count > 0 {
