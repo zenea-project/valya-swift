@@ -157,8 +157,7 @@ extension Block {
             
             print("  decoding id")
             guard blocksData.count >= algorithm.bytes else { return .corrupted }
-            let idData = blocksData[0..<algorithm.bytes]
-            let id = [UInt8](idData)
+            let id = blocksData.prefix(algorithm.bytes).map { $0 }
             
             print("  appending block")
             blocks.append(Block.ID(algorithm: algorithm, hash: id))
