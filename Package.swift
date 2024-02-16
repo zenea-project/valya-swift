@@ -12,7 +12,7 @@ let package = Package(
         .library(name: "valya-swift", targets: ["valya"])
     ],
     dependencies: [
-        .package(url: "https://github.com/glasfisch3000/zenea-swift.git", from: "1.0.0-alpha7")
+        .package(url: "https://github.com/glasfisch3000/zenea-swift.git", branch: "main")
     ],
     targets: [
         .target(

@@ -1,15 +1,15 @@
-import zenea
-import CryptoKit
 import Foundation
 
-public struct ValyaBlockWrapper: BlockStorage {
-    public var source: BlockStorage
+import zenea
+
+public struct ValyaBlockWrapper<Source: BlockStorage>: BlockStorageWrapper {
+    public static var name: String { "valya" }
     
-    public init(source: BlockStorage) {
+    public var source: Source
+    
+    public init(source: Source) {
         self.source = source
     }
-    
-    public var description: String { source.description }
     
     public func listBlocks() async -> Result<Set<Block.ID>, BlockListError> {
         return await source.listBlocks()
@@ -54,123 +54,10 @@ public struct ValyaBlockWrapper: BlockStorage {
     }
 }
 
-extension Array where Element == Block.ID {
-    public func compress() -> (Set<Block>, Block.ID)? {
-        if self.count <= 0 { return nil }
-        if self.count == 1 { return ([], self[0]) }
-        
-        var blocks: [Block] = []
-        
-        // 1597 is max
-        for start in stride(from: 0, to: self.count, by: 1597) {
-            let end = Swift.min(self.count, start + 1597)
-            let block = Block(encoding: self[start..<end])
-            guard let block = block else { return nil }
-            
-            blocks.append(block)
-        }
-        
-        guard let (additional, main) = blocks.map(\.id).compress() else { return nil }
-        
-        let newBlocks = Set(blocks).union(additional)
-        return (newBlocks, main)
-    }
-}
-
 extension Block.ID.Algorithm {
     public var bytes: Int {
         switch self {
         case .sha2_256: return 32
         }
     }
-}
-
-extension Block.ID {
-    public func encode() -> Data? {
-        guard let algorithm = self.algorithm.rawValue.data(using: .utf8) else { return nil }
-        
-        let hash = Data(self.hash.prefix(self.algorithm.bytes))
-        guard hash.count == self.algorithm.bytes else { return nil }
-        
-        return algorithm + [0] + hash
-    }
-}
-
-extension Block {
-    public init?<Array>(encoding blocks: Array) where Array: Sequence, Array.Element == Block.ID {
-        guard let prefixData = "valya-1".data(using: .utf8) else { return nil }
-        
-        var blocksData = Data(capacity: 1<<16)
-        for block in blocks {
-            guard let encoded = block.encode() else { return nil }
-            blocksData += encoded
-            
-            guard blocksData.count < 1<<16 else { return nil }
-        }
-        guard blocksData.count > 0 else { return nil }
-        
-        var hasher = SHA256()
-        hasher.update(data: blocksData)
-        let hashData = hasher.finalize()
-        
-        let result = prefixData + [0] + hashData + blocksData
-        guard result.count <= 1<<16 else { return nil }
-        
-        self.init(content: result)
-    }
-    
-    public func decode() -> ValyaDecodeResult {
-        guard self.content.count > 0 else { return .empty }
-        
-        let prefix = self.content.prefix(while: { $0 != 0 })
-        guard let prefixString = String(data: prefix, encoding: .utf8) else { return .regularBlock }
-        guard prefixString == "valya-1" else { return .regularBlock }
-        
-        guard self.content.count > prefix.count+1+SHA256.byteCount else { return .regularBlock }
-        let hashData = self.content[prefix.count+1..<prefix.count+1+SHA256.byteCount]
-        
-        var blocksData = self.content[prefix.count+1+hashData.count..<self.content.count]
-        
-        var hasher = SHA256()
-        hasher.update(data: blocksData)
-        guard hasher.finalize().elementsEqual(hashData) else { return .regularBlock }
-        
-        var blocks: [Block.ID] = []
-        while blocksData.count > 0 {
-            let algorithmData = blocksData.prefix { $0 != 0 }
-            blocksData.removeFirst(algorithmData.count)
-            
-            guard blocksData.count > 0 else { return .corrupted }
-            blocksData.removeFirst() // separator
-            
-            guard let algorithmString = String(data: algorithmData, encoding: .utf8) else { return .corrupted }
-            guard let algorithm = Block.ID.Algorithm(parsing: algorithmString) else { return .corrupted }
-            
-            guard blocksData.count >= algorithm.bytes else { return .corrupted }
-            let id = blocksData.prefix(algorithm.bytes).map { $0 }
-            
-            blocks.append(Block.ID(algorithm: algorithm, hash: id))
-            
-            blocksData.removeFirst(algorithm.bytes)
-        }
-        
-        return .valyaBlock(ValyaBlock(version: .v1, content: blocks))
-    }
-}
-
-public enum ValyaDecodeResult {
-    case error
-    case empty
-    case corrupted
-    case regularBlock
-    case valyaBlock(_ block: ValyaBlock)
-}
-
-public struct ValyaBlock {
-    public enum Version {
-        case v1
-    }
-    
-    public var version: Version
-    public var content: [Block.ID]
 }
