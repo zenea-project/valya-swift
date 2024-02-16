@@ -1,5 +1,6 @@
 import Foundation
 
+import FastCDC
 import zenea
 
 public struct ValyaBlockWrapper<Source: BlockStorage>: BlockStorageWrapper {
@@ -26,11 +27,7 @@ public struct ValyaBlockWrapper<Source: BlockStorage>: BlockStorageWrapper {
     public func putBlock(content: Data) async -> Result<Block.ID, BlockPutError> {
         var blocks: [Block.ID] = []
         
-        for start in stride(from: 0, to: content.count, by: 1<<16) {
-            let end = min(content.count, start + 1<<16)
-            let subdata = content[start..<end]
-            let block = Block(content: subdata)
-            
+        for subdata in content.fastCDC(min: 1<<14, avg: 1<<15, max: 1<<16) {
             switch await source.putBlock(content: subdata) {
             case .success(block.id): blocks.append(block.id)
             case .success(_): return .failure(.unable)

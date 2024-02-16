@@ -28,6 +28,15 @@
       }
     },
     {
+      "identity" : "fastcdc-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/glasfisch3000/fastcdc-swift.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "2b99ef22f20395af2ba6096f9c674a118e350cdb"
+      }
+    },
+    {
       "identity" : "multipart-kit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/multipart-kit.git",
