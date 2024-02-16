@@ -3,12 +3,12 @@ import Foundation
 import FastCDC
 import zenea
 
-public struct ValyaBlockWrapper<Source: BlockStorage>: BlockStorageWrapper {
+public struct ValyaBlockWrapper: BlockStorageWrapper {
     public static var name: String { "valya" }
     
-    public var source: Source
+    public var source: BlockStorage
     
-    public init(source: Source) {
+    public init(source: BlockStorage) {
         self.source = source
     }
     
