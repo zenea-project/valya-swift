@@ -27,7 +27,7 @@ public struct ValyaBlockWrapper: BlockStorageWrapper {
     public func putBlock(content: Data) async -> Result<Block.ID, BlockPutError> {
         var blocks: [Block.ID] = []
         
-        for subdata in content.fastCDC(min: 1<<14, avg: 1<<15, max: 1<<16) {
+        for subdata in content.fastCDC(min: 1<<12, avg: 1<<14, max: 1<<16) {
             let block = Block(content: subdata)
             
             switch await source.putBlock(content: subdata) {
