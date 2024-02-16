@@ -52,7 +52,3 @@ public struct ValyaBlockWrapper<Source: BlockStorage>: BlockStorageWrapper {
         return .success(main)
     }
 }
-
-extension BlockStorage {
-    public var valya: ValyaBlockWrapper<Self> { ValyaBlockWrapper(source: self) }
-}
