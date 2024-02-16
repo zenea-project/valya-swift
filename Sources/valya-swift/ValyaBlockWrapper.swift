@@ -53,10 +53,6 @@ public struct ValyaBlockWrapper<Source: BlockStorage>: BlockStorageWrapper {
     }
 }
 
-extension Block.ID.Algorithm {
-    public var bytes: Int {
-        switch self {
-        case .sha2_256: return 32
-        }
-    }
+extension BlockStorage {
+    public var valya: ValyaBlockWrapper<Self> { ValyaBlockWrapper(source: self) }
 }
