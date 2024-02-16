@@ -28,6 +28,8 @@ public struct ValyaBlockWrapper<Source: BlockStorage>: BlockStorageWrapper {
         var blocks: [Block.ID] = []
         
         for subdata in content.fastCDC(min: 1<<14, avg: 1<<15, max: 1<<16) {
+            let block = Block(content: subdata)
+            
             switch await source.putBlock(content: subdata) {
             case .success(block.id): blocks.append(block.id)
             case .success(_): return .failure(.unable)
