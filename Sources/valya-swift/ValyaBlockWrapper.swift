@@ -40,7 +40,7 @@ public struct ValyaBlockWrapper: BlockStorageWrapper {
                 let block = Block(content: subdata)
                 
                 switch await source.putBlock(data: subdata) {
-                case .success(block), .failure(.exists): blocks.append(block)
+                case .success(block), .failure(.exists(block)): blocks.append(block)
                 case .success(_): return .failure(.unable)
                 case .failure(let error): return .failure(error)
                 }
@@ -56,7 +56,7 @@ public struct ValyaBlockWrapper: BlockStorageWrapper {
         case .success(let main, additional: let additional):
             for block in additional {
                 switch await source.putBlock(content: [block.content]) {
-                case .success(block), .failure(.exists): break
+                case .success(block), .failure(.exists(block)): break
                 case .success(_): return .failure(.unable)
                 case .failure(let error): return .failure(error)
                 }
