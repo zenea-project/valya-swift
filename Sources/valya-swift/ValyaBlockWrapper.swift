@@ -7,9 +7,11 @@ public struct ValyaBlockWrapper: BlockStorageWrapper {
     public static var name: String { "valya" }
     
     public var source: BlockStorage
+    public var version: Valya.Version
     
-    public init(source: BlockStorage) {
+    public init(source: BlockStorage, version: Valya.Version) {
         self.source = source
+        self.version = version
     }
     
     public func listBlocks() async -> Result<Set<Block.ID>, BlockListError> {
@@ -25,30 +27,30 @@ public struct ValyaBlockWrapper: BlockStorageWrapper {
     }
     
     public func putBlock(content: Data) async -> Result<Block.ID, BlockPutError> {
+        let valya = Valya(self.version)
+        
         var blocks: [Block.ID] = []
-        
-        for subdata in content.fastCDC(min: 1<<12, avg: 1<<14, max: 1<<16) {
-            let block = Block(content: subdata)
-            
-            switch await source.putBlock(content: subdata) {
-            case .success(block.id): blocks.append(block.id)
-            case .success(_): return .failure(.unable)
-            case .failure(.exists): blocks.append(block.id)
-            case .failure(let error): return .failure(error)
-            }
-        }
-        
-        guard let (additional, main) = blocks.compress() else { return .failure(.unable) }
-        
-        for block in additional {
+        for block in valya.chunkData(content) {
             switch await source.putBlock(content: block.content) {
-            case .success(block.id): break
+            case .success(block.id), .failure(.exists): blocks.append(block.id)
             case .success(_): return .failure(.unable)
-            case .failure(.exists): break
             case .failure(let error): return .failure(error)
             }
         }
         
-        return .success(main)
+        switch valya.compress(blocks) {
+        case .error: return .failure(.unable)
+        case .empty: return await source.putBlock(content: Data())
+        case .success(let main, additional: let additional):
+            for block in additional {
+                switch await source.putBlock(content: block.content) {
+                case .success(block.id), .failure(.exists): break
+                case .success(_): return .failure(.unable)
+                case .failure(let error): return .failure(error)
+                }
+            }
+            
+            return .success(main)
+        }
     }
 }
