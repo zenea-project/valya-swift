@@ -5,7 +5,7 @@ public struct Valya {
     
     public var preferredVersion: Version
     
-    init(_ preferredVersion: Version = .v1_1) {
+    public init(_ preferredVersion: Version = .v1_1) {
         self.preferredVersion = preferredVersion
     }
 }
