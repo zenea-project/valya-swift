@@ -9,7 +9,7 @@ public struct ValyaBlockWrapper: BlockStorageWrapper {
     public var source: BlockStorage
     public var version: Valya.Version
     
-    public init(source: BlockStorage, version: Valya.Version) {
+    public init(source: BlockStorage, version: Valya.Version = .v1_1) {
         self.source = source
         self.version = version
     }
