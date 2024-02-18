@@ -1,6 +1,6 @@
 public struct Valya {
-    public enum Version {
-        case v1_1
+    public enum Version: String {
+        case v1_1 = "v1.1"
     }
     
     public var preferredVersion: Version

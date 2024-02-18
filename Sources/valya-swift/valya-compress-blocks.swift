@@ -6,14 +6,15 @@ import zenea
 
 extension Valya {
     public enum CompressResult {
-        case empty
         case error
-        case success(_ main: Block.ID, additional: Set<Block>)
+        case empty
+        case single
+        case success(_ main: Block, additional: Set<Block>)
     }
     
-    public func compress(_ blocks: [Block.ID]) -> CompressResult {
+    public func compress(_ blocks: [Block.ID]) async -> CompressResult {
         switch self.preferredVersion {
-        case .v1_1: return Self.valya_1_1_compress(blocks)
+        case .v1_1: return await Self.valya_1_1_compress(blocks)
         }
     }
     
@@ -35,37 +36,45 @@ extension Valya {
         ]
     }
     
-    public static func valya_1_1_compress(_ blocks: [Block.ID]) -> CompressResult {
-        if blocks.count <= 0 { return .empty }
-        if blocks.count == 1 { return .success(blocks[0], additional: []) }
+    public static func valya_1_1_compress(_ ids: [Block.ID]) async -> CompressResult {
+        if ids.count <= 0 { return .empty }
+        if ids.count == 1 { return .single }
         
-        var data: [Data] = []
-        for block in blocks {
-            guard let encoded = valya_1_1_encodeID(block) else { return .error }
-            data.append(encoded)
+        var encodedIDs: [Data] = []
+        for id in ids {
+            guard let encoded = valya_1_1_encodeID(id) else { return .error }
+            encodedIDs.append(encoded)
         }
         
         let capacity = 1<<16 - valya_1_1_prefix.count - 32 // block size - prefix - SHA256 hash
         let average = capacity/2
         let minimum = average/2
         
-        var blocks: [Block] = []
-        
-        for subrange in data.fastCDCSequence(minBytes: minimum, avgBytes: average, maxBytes: capacity) {
-            let subset = data[subrange]
-            let size = subset.reduce(0) { $0 + $1.count }
-            let subdata = subset.reduce(into: Data(capacity: size)) { $0.append($1) }
+        do {
+            var compressedBlocks: [Block] = []
+            for try await subset in encodedIDs.fastCDC(min: minimum, avg: average, max: capacity).slices {
+                var data = Data()
+                var hasher = SHA256()
+                
+                for id in subset {
+                    data += id
+                    hasher.update(data: id)
+                }
+                
+                let prefix = valya_1_1_prefix
+                let hash = hasher.finalize()
+                
+                let block = Block(content: prefix + hash + data)
+                compressedBlocks.append(block)
+            }
             
-            let prefix = valya_1_1_prefix
-            let hash = SHA256.hash(data: subdata)
-            
-            let block = Block(content: prefix + hash + subdata)
-            blocks.append(block)
-        }
-        
-        switch valya_1_1_compress(blocks.map(\.id)) {
-        case .empty, .error: return .error
-        case .success(let main, additional: let additional): return .success(main, additional: additional.union(blocks))
+            switch await valya_1_1_compress(compressedBlocks.map(\.id)) {
+            case .empty, .error: return .error
+            case .single: return .success(compressedBlocks[0], additional: [compressedBlocks[0]])
+            case .success(let main, additional: let additional): return .success(main, additional: additional.union(compressedBlocks))
+            }
+        } catch {
+            return .error
         }
     }
 }

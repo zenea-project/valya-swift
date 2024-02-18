@@ -52,7 +52,9 @@ extension Valya {
         
         var blocks: [Block.ID] = []
         while blocksData.count > 0 {
-            let typeData = blocksData.prefix(8)
+            guard blocksData.count >= 8 else { return .corrupted }
+            
+            let typeData = blocksData[..<(blocksData.startIndex+8)]
             blocksData.removeFirst(typeData.count)
             
             guard let (family, subtype) = typeData.valya_1_1_algorithmType else { return .corrupted }
