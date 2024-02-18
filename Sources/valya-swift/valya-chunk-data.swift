@@ -57,6 +57,13 @@ public struct AsyncDataSequenceCDCSource<Sequence>: FastCDCSource, AsyncSequence
         defer { index += 1 }
         return accumulatedData[index]
     }
+    
+    public mutating func load(to index: Int) async {
+        if index >= accumulatedData.count {
+            guard let next = try? await sequence.next() else { return }
+            accumulatedData += next
+        }
+    }
 }
 
 extension AsyncSequence where Element == Data {
