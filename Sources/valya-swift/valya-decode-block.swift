@@ -12,7 +12,7 @@ extension Valya {
         case success(_ contents: [Block.ID])
     }
     
-    public func decode<Data: DataProtocol>(_ data: Data, tryOtherVersions: Bool = true) -> DecodeResult where Data.Index == Int {
+    public func decode(_ data: Data, tryOtherVersions: Bool = true) -> DecodeResult {
         typealias DecodeFunction = (Data) -> DecodeResult
         
         let main: DecodeFunction
@@ -37,7 +37,7 @@ extension Valya {
         return .regularBlock
     }
     
-    public static func valya_1_1_decode<Data: DataProtocol>(_ data: Data) -> DecodeResult where Data.Index == Int {
+    public static func valya_1_1_decode(_ data: Data) -> DecodeResult {
         guard data.count > 0 else { return .empty }
         guard data.starts(with: valya_1_1_prefix) else { return .regularBlock }
         
@@ -79,13 +79,13 @@ extension Block.ID.Algorithm {
     }
 }
 
-extension DataProtocol {
+extension Data {
     fileprivate var valya_1_1_algorithmType: (UInt32, UInt32)? {
-        self.withContiguousStorageIfAvailable { pointer in
-            pointer.withMemoryRebound(to: UInt32.self) { pointer in
-                guard pointer.count >= 2 else { return nil }
-                return (pointer[0], pointer[1])
-            }
-        } ?? nil
+        self.withUnsafeBytes { pointer in
+            let buffer = pointer.bindMemory(to: UInt32.self)
+            
+            guard buffer.count >= 2 else { return nil }
+            return (buffer[0], buffer[1])
+        }
     }
 }
