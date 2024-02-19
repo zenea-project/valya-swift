@@ -10,22 +10,21 @@ extension Valya {
     }
 }
 
-public struct AsyncDataSequenceCDCSource<Sequence>: FastCDCSource, AsyncSequence, AsyncIteratorProtocol where Sequence: AsyncIteratorProtocol, Sequence.Element == Data {
+public struct AsyncDataSequenceCDCSource<Sequence>: FastCDCSource, IteratorProtocol where Sequence: AsyncIteratorProtocol, Sequence.Element == Data {
     public typealias Index = Int
     public typealias OffsetSequence = Data
     public typealias SubSequence = Data
-    public typealias AsyncIterator = Self
     public typealias Element = UInt8
     
     public var sequence: Sequence
     public var accumulatedData = Data()
-    public var index = 0
+    public private(set) var index = 0
     
     public init(sequence: Sequence) {
         self.sequence = sequence
     }
     
-    public var count: Int { accumulatedData.count }
+    public var count: Int = 0
     
     public var startIndex: Int { accumulatedData.startIndex }
     public var endIndex: Int { accumulatedData.endIndex }
@@ -42,26 +41,22 @@ public struct AsyncDataSequenceCDCSource<Sequence>: FastCDCSource, AsyncSequence
         accumulatedData[indices]
     }
     
-    public func makeAsyncIterator() -> Self {
+    public func makeIterator() -> Self {
         self
     }
     
-    public mutating func next() async throws -> UInt8? {
-        if index >= accumulatedData.count {
-            guard let next = try await sequence.next() else { return nil }
-            accumulatedData += next
-            
-            return try await self.next()
-        }
-        
+    public mutating func next() -> UInt8? {
+        guard index < count else { return nil }
         defer { index += 1 }
         return accumulatedData[index]
     }
     
-    public mutating func load(to index: Int) async {
-        if index >= accumulatedData.count {
-            guard let next = try? await sequence.next() else { return }
+    public mutating func load(from index: Int, bytes: Int) async {
+        let endIndex = index + bytes
+        
+        while count < endIndex, let next = try? await sequence.next() {
             accumulatedData += next
+            count = accumulatedData.count
         }
     }
 }
