@@ -9,7 +9,7 @@ let package = Package(
         .macOS("13.3")
     ],
     products: [
-        .library(name: "valya-swift", targets: ["valya"])
+        .library(name: "valya-swift", targets: ["Valya"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-crypto.git", from: "3.3.0"),
@@ -18,7 +18,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "valya",
+            name: "Valya",
             dependencies: [
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "zenea-swift", package: "zenea-swift"),
