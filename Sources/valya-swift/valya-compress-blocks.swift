@@ -1,8 +1,6 @@
 import Foundation
-import CryptoKit
-
-import FastCDC
-import zenea
+import Crypto
+import Zenea
 
 extension Valya {
     public enum CompressResult {
@@ -50,31 +48,27 @@ extension Valya {
         let average = capacity/2
         let minimum = average/2
         
-        do {
-            var compressedBlocks: [Block] = []
-            for try await subset in encodedIDs.fastCDC(min: minimum, avg: average, max: capacity).slices {
-                var data = Data()
-                var hasher = SHA256()
-                
-                for id in subset {
-                    data += id
-                    hasher.update(data: id)
-                }
-                
-                let prefix = valya_1_1_prefix
-                let hash = hasher.finalize()
-                
-                let block = Block(content: prefix + hash + data)
-                compressedBlocks.append(block)
+        var compressedBlocks: [Block] = []
+        for (subsets, _) in encodedIDs.chunk(min: minimum, avg: average, max: capacity) {
+            var data = Data()
+            var hasher = SHA256()
+            
+            for id in subsets {
+                data += id
+                hasher.update(data: id)
             }
             
-            switch await valya_1_1_compress(compressedBlocks.map(\.id)) {
-            case .empty, .error: return .error
-            case .single: return .success(compressedBlocks[0], additional: [compressedBlocks[0]])
-            case .success(let main, additional: let additional): return .success(main, additional: additional.union(compressedBlocks))
-            }
-        } catch {
-            return .error
+            let prefix = valya_1_1_prefix
+            let hash = hasher.finalize()
+            
+            let block = Block(content: prefix + hash + data)
+            compressedBlocks.append(block)
+        }
+        
+        switch await valya_1_1_compress(compressedBlocks.map(\.id)) {
+        case .empty, .error: return .error
+        case .single: return .success(compressedBlocks[0], additional: [compressedBlocks[0]])
+        case .success(let main, additional: let additional): return .success(main, additional: additional.union(compressedBlocks))
         }
     }
 }

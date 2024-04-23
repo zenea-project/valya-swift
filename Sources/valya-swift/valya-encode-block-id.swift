@@ -1,6 +1,5 @@
 import Foundation
-
-import zenea
+import Zenea
 
 extension Valya {
     public func encodeID(_ id: Block.ID) -> Data? {
@@ -14,8 +13,8 @@ extension Valya {
         typeData += id.algorithm.valya_1_1_family.data
         typeData += id.algorithm.valya_1_1_subtype.data
         
-        let hash = Data(id.hash.prefix(id.algorithm.bytes))
-        guard hash.count == id.algorithm.bytes else { return nil }
+        let hash = Data(id.hash.prefix(id.algorithm.byteCount))
+        guard hash.count == id.algorithm.byteCount else { return nil }
         
         return typeData + hash
     }

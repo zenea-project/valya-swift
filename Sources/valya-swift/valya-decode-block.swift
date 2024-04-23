@@ -1,7 +1,6 @@
-import CryptoKit
 import Foundation
-
-import zenea
+import Crypto
+import Zenea
 
 extension Valya {
     public enum DecodeResult {
@@ -60,12 +59,12 @@ extension Valya {
             guard let (family, subtype) = typeData.valya_1_1_algorithmType else { return .corrupted }
             guard let algorithm = Block.ID.Algorithm(family: family, subtype: subtype) else { return .corrupted }
             
-            guard blocksData.count >= algorithm.bytes else { return .corrupted }
-            let id = blocksData.prefix(algorithm.bytes).map { $0 }
+            guard blocksData.count >= algorithm.byteCount else { return .corrupted }
+            let id = blocksData.prefix(algorithm.byteCount).map { $0 }
             
             blocks.append(Block.ID(algorithm: algorithm, hash: id))
             
-            blocksData.removeFirst(algorithm.bytes)
+            blocksData.removeFirst(algorithm.byteCount)
         }
         
         return .success(blocks)

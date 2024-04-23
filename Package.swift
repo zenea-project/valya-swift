@@ -12,16 +12,19 @@ let package = Package(
         .library(name: "valya-swift", targets: ["valya"])
     ],
     dependencies: [
-        .package(url: "https://github.com/glasfisch3000/zenea-swift.git", branch: "main"),
-        .package(url: "https://github.com/glasfisch3000/fastcdc-swift.git", branch: "main")
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.3.0"),
+        .package(url: "https://github.com/zenea-project/zenea-swift.git", from: "3.0.0"),
+        .package(url: "https://github.com/glasfisch3000/fastcdc-swift.git", from: "3.0.0")
     ],
     targets: [
         .target(
             name: "valya",
             dependencies: [
+                .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "zenea-swift", package: "zenea-swift"),
-                .product(name: "FastCDC", package: "fastcdc-swift")
-            ]
+                .product(name: "fastcdc", package: "fastcdc-swift"),
+            ],
+            path: "./Sources/valya-swift"
         )
     ]
 )
