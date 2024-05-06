@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/glasfisch3000/fastcdc-swift.git",
       "state" : {
-        "revision" : "20a8252fb09ad93c69724f75206475df9c85ca5e",
-        "version" : "3.0.0"
+        "revision" : "b51bfb93eeb9a39b71b41fa6850a005ec4a51b2c",
+        "version" : "3.0.1"
       }
     },
     {
