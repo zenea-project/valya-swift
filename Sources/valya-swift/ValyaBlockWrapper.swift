@@ -38,7 +38,7 @@ public struct ValyaBlockWrapper<Source>: BlockStorageWrapper where Source: Block
     
     public func valya_1_1_putBlock(content: Data) async -> Result<Block, Block.PutError> {
         var blocks: [Block] = []
-        for (subdata, _) in content.chunk(min: Block.maxBytes/8, avg: Block.maxBytes/4, max: Block.maxBytes) {
+        for (subdata, _) in content.chunk(min: Block.maxBytes/16, avg: Block.maxBytes/4, max: Block.maxBytes) {
             let block = Block(content: subdata)
             
             switch await source.putBlock(content: subdata) {
